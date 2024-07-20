@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bhagavad Gita AI Chat</title>
+  <link rel="stylesheet" href="gita.css">
+</head>
+<body>
+  <div id="app" class="gita-chat-container">
+    <h1>Bhagavad Gita AI Chat</h1>
+    <div id="chat-container" class="chat-container">
+      <p class="empty-state">Start typing your question to begin the conversation...</p>
+    </div>
+    <form id="ai-form" class="ai-form">
+      <input type="text" id="inputValue" placeholder="Type your question...">
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const state = {
+        chatHistory: [],
+        loading: false,
+        typingIndex: -1,
+        buttonDisabled: false,
+        isTyping: false,
+      };
+
+      const chatContainer = document.getElementById('chat-container');
+      const form = document.getElementById('ai-form');
+      const input = document.getElementById('inputValue');
+      const submitButton = form.querySelector('button[type="submit"]');
+
+      form.addEventListener('submit', handleSubmit);
+
+      function setInputValue(value) {
+        input.value = value;
+      }
+
+      function setChatHistory(history) {
+        state.chatHistory = history;
+        renderChat();
+      }
+
+      function setLoading(value) {
+        state.loading = value;
+        submitButton.disabled = value;
+      }
+
+      function setTypingIndex(index) {
+        state.typingIndex = index;
+        renderChat();
+      }
+
+      function setIsTyping(value) {
+        state.isTyping = value;
+        renderChat();
+      }
+
+      async function handleSubmit(e) {
+        e.preventDefault();
+        if (!input.value.trim() || state.loading) return;
+
+        setLoading(true);
+        setIsTyping(true);
+
+        try {
+          const question = encodeURIComponent(input.value);
+          const apiUrl = `https://proxy.cors.sh/https://gitagpt.org/api/ask/gita?q=${question}&email=null&locale=en`;
+          const response = await fetch(apiUrl, {
+            headers: {
+              'x-cors-api-key': 'temp_5b13b894b970cb9ec711055cb183349b',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+
+          const data = await response.json();
+          const responseText = data.response;
+          setChatHistory([...state.chatHistory, { question: input.value, response: responseText }]);
+          setInputValue('');
+          setTypingIndex(responseText.length);
+          setIsTyping(false);
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          setChatHistory([...state.chatHistory, { question: input.value, response: "I'm sorry, but I couldn't process your request. Please try again later." }]);
+        } finally {
+          setLoading(false);
+          setIsTyping(false);
+        }
+      }
+
+      function renderChat() {
+        chatContainer.innerHTML = '';
+
+        if (state.chatHistory.length === 0) {
+          const emptyState = document.createElement('p');
+          emptyState.classList.add('empty-state');
+          emptyState.textContent = 'Start typing your question to begin the conversation...';
+          chatContainer.appendChild(emptyState);
+        } else {
+          state.chatHistory.forEach((chat, index) => {
+            const chatItem = document.createElement('div');
+            chatItem.classList.add('chat-item');
+
+            const userQuestion = document.createElement('p');
+            userQuestion.innerHTML = `<span class="ai-name">You:</span> ${chat.question}`;
+            chatItem.appendChild(userQuestion);
+
+            const aiResponse = document.createElement('p');
+            aiResponse.innerHTML = `<span class="ai-name">Bhagavad Gita:</span> ${chat.response}`;
+            chatItem.appendChild(aiResponse);
+
+            chatContainer.appendChild(chatItem);
+          });
+        }
+
+        if (state.isTyping) {
+          const typingItem = document.createElement('div');
+          typingItem.classList.add('chat-item');
+
+          const typingMessage = document.createElement('p');
+          typingMessage.innerHTML = `<span class="ai-name">Bhagavad Gita:</span> Typing...`;
+          typingItem.appendChild(typingMessage);
+
+          chatContainer.appendChild(typingItem);
+        }
+
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    });
+  </script>
+</body>
+</html>

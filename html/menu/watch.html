@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wall Watch</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 50px;
+        }
+        .clock {
+            font-size: 72px;
+            margin: 20px;
+            color: #333;
+        }
+        .controls {
+            margin: 20px;
+        }
+        .button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="clock" id="clock"></div>
+    <div class="controls">
+        <input type="time" id="alarmTime" />
+        <button class="button" onclick="setAlarm()">Set Alarm</button>
+    </div>
+    <div class="controls">
+        <input type="number" id="timerDuration" placeholder="Timer (seconds)" />
+        <button class="button" onclick="startTimer()">Start Timer</button>
+    </div>
+    <div class="controls">
+        <button class="button" onclick="startStopwatch()">Start Stopwatch</button>
+        <button class="button" onclick="stopStopwatch()">Stop Stopwatch</button>
+        <button class="button" onclick="resetStopwatch()">Reset Stopwatch</button>
+    </div>
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').innerText = `${hours}:${minutes}:${seconds}`;
+        }
+        setInterval(updateClock, 1000);
+
+        let alarmTime = null;
+        let timerTimeout = null;
+        let stopwatchInterval = null;
+        let stopwatchTime = 0;
+
+        function setAlarm() {
+            const alarmInput = document.getElementById('alarmTime').value;
+            if (alarmInput) {
+                const [hours, minutes] = alarmInput.split(':');
+                const now = new Date();
+                alarmTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0);
+                if (alarmTime < now) {
+                    alarmTime.setDate(alarmTime.getDate() + 1);
+                }
+                alert(`Alarm set for ${alarmTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })} IST`);
+            }
+        }
+
+        function checkAlarm() {
+            const now = new Date();
+            if (alarmTime && now >= alarmTime) {
+                alert('Alarm ringing!');
+                alarmTime = null;
+            }
+        }
+        setInterval(checkAlarm, 1000);
+
+        function startTimer() {
+            const duration = parseInt(document.getElementById('timerDuration').value, 10) * 1000;
+            if (timerTimeout) clearTimeout(timerTimeout);
+            timerTimeout = setTimeout(() => alert('Timer finished!'), duration);
+        }
+
+        function startStopwatch() {
+            if (stopwatchInterval) return;
+            stopwatchInterval = setInterval(() => {
+                stopwatchTime += 1;
+                console.log(stopwatchTime);
+            }, 1000);
+        }
+
+        function stopStopwatch() {
+            clearInterval(stopwatchInterval);
+            stopwatchInterval = null;
+        }
+
+        function resetStopwatch() {
+            stopStopwatch();
+            stopwatchTime = 0;
+        }
+    </script>
+</body>
+</html>

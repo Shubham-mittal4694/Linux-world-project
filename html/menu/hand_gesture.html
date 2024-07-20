@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Gesture Recognition</title>
+    <link rel="icon" href="data:,">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        nav {
+            width: 100%;
+            background-color: #4285f4;
+            padding: 10px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul li {
+            margin: 0 15px;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            transition: color 0.3s ease;
+        }
+        nav ul li a:hover {
+            color: #ccc;
+        }
+        h1 {
+            color: #333;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        video {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background: white;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+        </ul>
+    </nav>
+    <h1>Hand Gesture Recognition</h1>
+    <video id="video" autoplay></video>
+    <div id="result"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
+    <script>
+        const videoElement = document.getElementById('video');
+        const resultElement = document.getElementById('result');
+
+        // Load Mediapipe Hands
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+        hands.setOptions({
+            maxNumHands: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(onResults);
+
+        // Start video stream
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                videoElement.srcObject = stream;
+            });
+
+        function onResults(results) {
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const handLandmarks = results.multiHandLandmarks[0];
+                const gesture = recognizeGesture(handLandmarks);
+                resultElement.textContent = `Detected Gesture: ${gesture}`;
+                performAction(gesture);
+            }
+        }
+
+        function recognizeGesture(handLandmarks) {
+            const thumbTip = handLandmarks[4];
+            const thumbIp = handLandmarks[3];
+            const indexFingerTip = handLandmarks[8];
+            const middleFingerTip = handLandmarks[12];
+            const ringFingerTip = handLandmarks[16];
+            const pinkyTip = handLandmarks[20];
+
+            // Thumb Up Gesture
+            if (thumbTip.y < thumbIp.y && thumbIp.y < indexFingerTip.y && indexFingerTip.y < middleFingerTip.y && middleFingerTip.y < ringFingerTip.y && ringFingerTip.y < pinkyTip.y) {
+                return "thumbs_up";
+            }
+            // Palm Open Gesture
+            if (indexFingerTip.y < handLandmarks[7].y && middleFingerTip.y < handLandmarks[11].y && ringFingerTip.y < handLandmarks[15].y && pinkyTip.y < handLandmarks[19].y) {
+                return "palm_open";
+            }
+            // Fist Gesture
+            if (indexFingerTip.y > handLandmarks[7].y && middleFingerTip.y > handLandmarks[11].y && ringFingerTip.y > handLandmarks[15].y && pinkyTip.y > handLandmarks[19].y) {
+                return "fist";
+            }
+            // Peace Gesture (Two Fingers Up)
+            if (indexFingerTip.y < handLandmarks[7].y && middleFingerTip.y < handLandmarks[11].y && ringFingerTip.y > handLandmarks[15].y && pinkyTip.y > handLandmarks[19].y) {
+                return "peace";
+            }
+            // One Finger Up Gesture (Previous Track)
+            if (indexFingerTip.y < handLandmarks[7].y && middleFingerTip.y > handLandmarks[11].y && ringFingerTip.y > handLandmarks[15].y && pinkyTip.y > handLandmarks[19].y) {
+                return "one_finger_up";
+            }
+            return "unknown";
+        }
+
+        function performAction(gesture) {
+            switch (gesture) {
+                case "thumbs_up":
+                    pyautogui.press('volumeup');  // Increase volume
+                    break;
+                case "palm_open":
+                    pyautogui.press('playpause');  // Play/Pause music
+                    break;
+                case "fist":
+                    pyautogui.press('volumedown');  // Decrease volume
+                    break;
+                case "peace":
+                    pyautogui.press('nexttrack');  // Next track
+                    break;
+                case "one_finger_up":
+                    pyautogui.press('prevtrack');  // Previous track
+                    break;
+                default:
+                    console.log('Unknown gesture');
+            }
+        }
+    </script>
+</body>
+</html>
